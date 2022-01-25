@@ -1,24 +1,5 @@
 # page-one
 
-## Project setup
-```
-npm install
-```
+[![Build and Deploy](https://github.com/thieleju/page-one/actions/workflows/deploy-gh-pages.yml/badge.svg?branch=gh-pages)](https://github.com/thieleju/page-one/actions/workflows/deploy-gh-pages.yml)
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+### Playing with GitHub Actions and GitHub Pages
