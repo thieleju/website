@@ -70,7 +70,7 @@
     </v-navigation-drawer>
 
     <v-main>
-      <v-btn @click="routeToName('About')">Go to about</v-btn>
+      <v-btn @click="routeToName('Start')">Go to Start</v-btn>
     </v-main>
 
     <v-footer app color="transparent" height="72" inset>
