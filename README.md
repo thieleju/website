@@ -1,7 +1,7 @@
-# page-one
+# page
 
-[![Build and Deploy](https://github.com/thieleju/page-one/actions/workflows/deploy-gh-pages.yml/badge.svg)](https://github.com/thieleju/page-one/actions/workflows/deploy-gh-pages.yml)
+[![Build and Deploy](https://github.com/thieleju/page/actions/workflows/deploy-gh-pages.yml/badge.svg)](https://github.com/thieleju/page/actions/workflows/deploy-gh-pages.yml)
 
 ### Playing with GitHub Actions and GitHub Pages
 
-[thieleju.github.io/page-one](https://thieleju.github.io/page-one)
+[page.node5.de](https://page.node5.de)
