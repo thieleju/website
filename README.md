@@ -6,3 +6,5 @@
 ### Playing with GitHub Actions and GitHub Pages
 
 After a commit on the main branch, a GitHub Action builds the site and pushes it to the `gh-pages` branch, from where it gets deployed to [page.node5.de](https://page.node5.de).
+
+> Note: I configured cloudflare (DNS) to deny access to the website if you are not located in germany (VPN to germany bypasses this)
