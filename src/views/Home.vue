@@ -1,5 +1,6 @@
 <template>
   <div class="container">
+    <gameCanvas v-if="showCanvas"> </gameCanvas>
     <vue-typer
       class="text-center"
       :text="textArray"
@@ -13,21 +14,32 @@
       erase-style="clear"
       :erase-on-complete="true"
       caret-animation="blink"
+      v-else
     ></vue-typer>
   </div>
 </template>
 
 <script>
 import { VueTyper } from "vue-typer";
+import gameCanvas from "./../components/gameCanvas.vue";
 
 export default {
   components: {
     VueTyper,
+    gameCanvas,
   },
   data() {
     return {
       textArray: ["Hello!", "Press SPACE to start!"],
+      showCanvas: false,
     };
+  },
+  created() {
+    window.addEventListener("keydown", (e) => {
+      if (e.code == "Space") {
+        this.showCanvas = true;
+      }
+    });
   },
 };
 </script>

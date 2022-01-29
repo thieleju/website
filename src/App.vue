@@ -101,7 +101,7 @@ export default {
     showImpressum() {
       if (!this.impressum) {
         axios
-          .get("/impressum")
+          .get("/v1/impressum")
           .then((data) => {
             this.impressum = data.data;
             this.showSwal(data.data);
@@ -112,7 +112,7 @@ export default {
     showDSGVO() {
       if (!this.dsgvo) {
         axios
-          .get("/dsgvo")
+          .get("/v1/dsgvo")
           .then((data) => {
             this.dsgvo = data.data;
             this.showSwal(data.data);

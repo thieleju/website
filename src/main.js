@@ -5,6 +5,7 @@ import store from "./store";
 import vuetify from "./plugins/vuetify";
 import axios from "axios";
 import VueAxios from "vue-axios";
+import VueKonva from "vue-konva";
 
 // import VueSocketIOExt from "vue-socket.io-extended";
 // import { io } from "socket.io-client";
@@ -26,7 +27,7 @@ if (process.env.VUE_APP_API_PATH) {
   //   reconnectionDelayMax: 10000,
   // });
 }
-
+Vue.use(VueKonva);
 Vue.use(VueAxios, axios);
 // Vue.use(VueSocketIOExt, socket, { store });
 
