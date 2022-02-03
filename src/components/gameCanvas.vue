@@ -1,40 +1,32 @@
 <template>
   <div>
-    <canvas id="pixi"></canvas>
+    <canvas class="canvas" id="pixi"></canvas>
   </div>
 </template>
 
 <script>
 import * as PIXI from "pixi.js";
 
-import { App } from "./../objects/App.js";
 import { Player } from "./../objects/Player.js";
-import { Scene } from "../objects/Scene.js";
 
 export default {
   data() {
     return {
       app: null,
       scene: {
-        width: (window.innerWidth / 3) * 2,
-        height: (window.innerHeight / 3) * 2,
+        width: 1080, //(window.innerWidth / 3) * 2,
+        height: 720, //(window.innerHeight / 3) * 2,
       },
       users: [],
       player: {
         object: null,
-        speed: 3,
+        name: "Player",
+        color: 0x38a3a5,
+        speed: 4,
+        radius: 20,
         velocity: {
           x: 0,
           y: 0,
-        },
-        options: {
-          name: "Player 1",
-          color: 0x38a3a5,
-          radius: 20,
-          // position: {
-          //   x: 0,
-          //   y: 0,
-          // },
         },
       },
       keys: [],
@@ -56,32 +48,58 @@ export default {
   },
   methods: {
     updatePlayerPosition(delta) {
-      let speed = this.player.speed;
-
-      if (this.keys["w"]) this.player.velocity.y = -speed;
-      else if (this.keys["s"]) this.player.velocity.y = speed;
+      // forward and backward moevement
+      if (this.keys["w"]) this.player.velocity.y = -this.player.speed;
+      else if (this.keys["s"]) this.player.velocity.y = this.player.speed;
       else this.player.velocity.y = 0;
-
-      if (this.keys["a"]) this.player.velocity.x = -speed;
-      else if (this.keys["d"]) this.player.velocity.x = speed;
+      // left and right movement
+      if (this.keys["a"]) this.player.velocity.x = -this.player.speed;
+      else if (this.keys["d"]) this.player.velocity.x = this.player.speed;
       else this.player.velocity.x = 0;
 
-      this.player.object.x += this.player.velocity.x * delta;
-      this.player.object.y += this.player.velocity.y * delta;
+      // keep in bounds of scene
+      this.player.object.position = this.getPositionInBounds(
+        this.player.object.x + this.player.velocity.x * delta,
+        this.player.object.y + this.player.velocity.y * delta,
+        this.player.object.children[0].getBounds(),
+        this.scene,
+        this.player.radius
+      );
+    },
+    getPositionInBounds(newX, newY, bounds, scene, radius) {
+      let x = 0;
+      let y = 0;
+
+      // set x coordinate
+      if (newX < bounds.width - radius) x = bounds.width - radius;
+      else if (newX > scene.width - bounds.width + radius)
+        x = scene.width - bounds.width + radius;
+      else x = newX;
+
+      // set y coordinate
+      if (newY < bounds.height - radius) y = bounds.height - radius;
+      else if (newY > scene.height - bounds.height + radius)
+        y = scene.height - bounds.height + radius;
+      else y = newY;
+
+      // return position
+      return { x, y };
     },
     gameLoop(delta) {
       this.updatePlayerPosition(delta);
     },
     initApplication() {
-      // set scene size
-      Scene.setScene(this.scene.width, this.scene.height);
       // generate application
-      this.app = new App(
-        this.scene,
-        document.getElementById("pixi")
-      ).getApplication();
+      this.app = new PIXI.Application({
+        width: this.scene.width,
+        height: this.scene.height,
+        antialias: true,
+        autoDensity: true,
+        backgroundAlpha: 0,
+        view: document.getElementById("pixi"),
+      });
 
-      // make everything interactive
+      // make stage interactive
       this.app.stage.interactive = true;
       this.app.stage.hitArea = this.app.renderer.screen;
 
@@ -90,15 +108,30 @@ export default {
     },
     initPlayers() {
       // own player
-      this.player.object = new Player(this.player.options).create();
+      this.player.object = new Player(
+        this.scene,
+        this.player.name,
+        this.player.color,
+        this.player.radius
+      ).create();
       this.users.push(this.player.object);
 
-      // add each player to stage
+      this.users.push(
+        new Player(
+          this.scene,
+          this.player.name,
+          this.player.color,
+          this.player.radius
+        ).create()
+      );
+
+      // add click events
       this.users.forEach((obj) => {
         obj.on("click", (e) => {
           console.log("clicked", e.target);
         });
       });
+      // add each player to stage
       this.app.stage.addChild(...this.users);
     },
     initBorders() {
@@ -117,4 +150,8 @@ export default {
 };
 </script>
 
-<style></style>
+<style lang="scss">
+.canvas {
+  margin: auto;
+}
+</style>
