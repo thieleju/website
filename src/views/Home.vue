@@ -41,6 +41,13 @@ export default {
       }
     });
   },
+  sockets: {
+    sockets: {
+      message(msg) {
+        console.log(msg);
+      },
+    },
+  },
 };
 </script>
 

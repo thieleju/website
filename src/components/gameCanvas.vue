@@ -6,6 +6,7 @@
 
 <script>
 import * as PIXI from "pixi.js";
+import { uniqueNamesGenerator, starWars } from "unique-names-generator";
 
 import { Player } from "./../objects/Player.js";
 
@@ -13,23 +14,25 @@ export default {
   data() {
     return {
       app: null,
+      keys: [],
       scene: {
         width: 1080, //(window.innerWidth / 3) * 2,
         height: 720, //(window.innerHeight / 3) * 2,
       },
-      users: [],
+      allPlayers: [],
+      allPlayerInstances: [],
       player: {
-        object: null,
-        name: "Player",
+        alive: true,
+        id: "",
+        name: null,
         color: 0x38a3a5,
-        speed: 4,
         radius: 20,
+        speed: 4,
         velocity: {
           x: 0,
           y: 0,
         },
       },
-      keys: [],
     };
   },
   created() {
@@ -42,48 +45,66 @@ export default {
     });
   },
   mounted() {
+    // init application and add borders
     this.initApplication();
     this.initBorders();
+
+    // add own player
+    this.player.id = this.generateID();
+    this.allPlayers.push({
+      id: this.player.id,
+      name: this.getNewRandomUserName(),
+      color: this.player.color,
+      radius: this.player.radius,
+      speed: this.player.speed,
+      velocity: this.player.velocity,
+    });
+
+    // add all players to scene
     this.initPlayers();
   },
-  methods: {
-    updatePlayerPosition(delta) {
-      // forward and backward moevement
-      if (this.keys["w"]) this.player.velocity.y = -this.player.speed;
-      else if (this.keys["s"]) this.player.velocity.y = this.player.speed;
-      else this.player.velocity.y = 0;
-      // left and right movement
-      if (this.keys["a"]) this.player.velocity.x = -this.player.speed;
-      else if (this.keys["d"]) this.player.velocity.x = this.player.speed;
-      else this.player.velocity.x = 0;
-
-      // keep in bounds of scene
-      this.player.object.position = this.getPositionInBounds(
-        this.player.object.x + this.player.velocity.x * delta,
-        this.player.object.y + this.player.velocity.y * delta,
-        this.player.object.children[0].getBounds(),
-        this.scene,
-        this.player.radius
-      );
+  sockets: {
+    message(msg) {
+      console.log(msg);
     },
-    getPositionInBounds(newX, newY, bounds, scene, radius) {
-      let x = 0;
-      let y = 0;
+  },
+  methods: {
+    initPlayers() {
+      this.allPlayers.forEach((el) => {
+        // create new player instance
+        let p = new Player(this.scene, el.id, el.name, el.color, el.radius);
 
-      // set x coordinate
-      if (newX < bounds.width - radius) x = bounds.width - radius;
-      else if (newX > scene.width - bounds.width + radius)
-        x = scene.width - bounds.width + radius;
-      else x = newX;
+        // add player to objects array
+        this.allPlayerInstances.push(p);
 
-      // set y coordinate
-      if (newY < bounds.height - radius) y = bounds.height - radius;
-      else if (newY > scene.height - bounds.height + radius)
-        y = scene.height - bounds.height + radius;
-      else y = newY;
+        // add player object to stage
+        this.app.stage.addChild(p.getGraphics());
+        // obj.on("click", (e) => {
+        //   console.log("clicked", e.target);
+        // });
+      });
+    },
+    updatePlayerPosition(delta) {
+      // find player object
+      let ownPlayer = this.allPlayerInstances.find(
+        (p) => p.getID() == this.player.id
+      );
 
-      // return position
-      return { x, y };
+      // move if alive
+      if (ownPlayer && ownPlayer.isAlive()) {
+        // forward and backward movement
+        if (this.keys["w"]) this.player.velocity.y = -this.player.speed;
+        else if (this.keys["s"]) this.player.velocity.y = this.player.speed;
+        else this.player.velocity.y = 0;
+
+        // left and right movement
+        if (this.keys["a"]) this.player.velocity.x = -this.player.speed;
+        else if (this.keys["d"]) this.player.velocity.x = this.player.speed;
+        else this.player.velocity.x = 0;
+
+        // update player position
+        ownPlayer.moveByVelocity(this.player.velocity, delta);
+      }
     },
     gameLoop(delta) {
       this.updatePlayerPosition(delta);
@@ -106,34 +127,6 @@ export default {
       // init game loop
       this.app.ticker.add((delta) => this.gameLoop(delta));
     },
-    initPlayers() {
-      // own player
-      this.player.object = new Player(
-        this.scene,
-        this.player.name,
-        this.player.color,
-        this.player.radius
-      ).create();
-      this.users.push(this.player.object);
-
-      this.users.push(
-        new Player(
-          this.scene,
-          this.player.name,
-          this.player.color,
-          this.player.radius
-        ).create()
-      );
-
-      // add click events
-      this.users.forEach((obj) => {
-        obj.on("click", (e) => {
-          console.log("clicked", e.target);
-        });
-      });
-      // add each player to stage
-      this.app.stage.addChild(...this.users);
-    },
     initBorders() {
       let line = new PIXI.Graphics();
 
@@ -145,6 +138,16 @@ export default {
       line.lineTo(0, 0);
 
       this.app.stage.addChild(line);
+    },
+    getNewRandomUserName() {
+      return uniqueNamesGenerator({
+        dictionaries: [starWars],
+        separator: " ",
+        style: "capital",
+      });
+    },
+    generateID() {
+      return Math.random().toString(36).substr(2, 15);
     },
   },
 };
