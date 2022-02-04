@@ -13,7 +13,7 @@ export class Player {
   container = null;
   playerGraphics = null;
 
-  constructor(scene, id, name, color, radius) {
+  constructor(scene, id, name, color, radius, position) {
     // set class attributes for player
     this.id = id;
     this.name = name;
@@ -34,10 +34,17 @@ export class Player {
     this.container.addChild(...this.generateText(this.name));
     this.container.interactive = true;
 
-    // set random starting position
-    let pos = this.generateRandomStartingPosition();
-    this.container.position.x = pos.x;
-    this.container.position.y = pos.y;
+    // set start position
+    this.container.position.x = position?.x || this.x;
+    this.container.position.y = position?.y || this.y;
+  }
+
+  setPosition(x, y) {
+    this.container.position = this.getPositionInBounds(
+      x,
+      y,
+      this.playerGraphics.getBounds()
+    );
   }
 
   moveByVelocity(velocity, delta) {
@@ -107,21 +114,30 @@ export class Player {
     return this.alive;
   }
 
-  generateRandomStartingPosition() {
+  getPosition() {
+    return this.container.position;
+  }
+
+  getPosX() {
+    return this.container.position.x;
+  }
+
+  getPosY() {
+    return this.container.position.y;
+  }
+
+  static generateRandomStartingPosition(scene, radius) {
     let padding_top = 25;
     return {
-      x: this.getRandomNumberBetween(
-        this.radius,
-        this.scene.width - this.radius
-      ),
-      y: this.getRandomNumberBetween(
-        this.radius + padding_top,
-        this.scene.height - this.radius
+      x: Player.getRandomNumberBetween(radius, scene.width - radius),
+      y: Player.getRandomNumberBetween(
+        radius + padding_top,
+        scene.height - radius
       ),
     };
   }
 
-  getRandomNumberBetween(min, max) {
+  static getRandomNumberBetween(min, max) {
     return Math.floor(Math.random() * (max - min) + min);
   }
 }

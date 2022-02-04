@@ -19,11 +19,9 @@ export default {
         width: 1080, //(window.innerWidth / 3) * 2,
         height: 720, //(window.innerHeight / 3) * 2,
       },
-      allPlayers: [],
       allPlayerInstances: [],
       player: {
-        alive: true,
-        id: "",
+        id: null,
         name: null,
         color: 0x38a3a5,
         radius: 20,
@@ -35,60 +33,89 @@ export default {
       },
     };
   },
-  created() {
-    // key events
-    document.body.addEventListener("keydown", (e) => {
-      this.keys[e.key] = true;
-    });
-    document.body.addEventListener("keyup", (e) => {
-      this.keys[e.key] = false;
-    });
-  },
   mounted() {
+    // request id
+    this.$socket.client.emit("request_id");
+
     // init application and add borders
     this.initApplication();
     this.initBorders();
 
-    // add own player
-    this.player.id = this.generateID();
-    this.allPlayers.push({
-      id: this.player.id,
-      name: this.getNewRandomUserName(),
-      color: this.player.color,
-      radius: this.player.radius,
-      speed: this.player.speed,
-      velocity: this.player.velocity,
-    });
-
-    // add all players to scene
-    this.initPlayers();
+    // add keyboard listener
+    this.addKeyboardListeners();
   },
   sockets: {
     message(msg) {
       console.log(msg);
     },
+    answer_id(id) {
+      this.player.id = id;
+      // add own player
+      this.initOwnPlayer();
+    },
+    player_leave(id) {
+      let player = this.allPlayerInstances.find((el) => el.id == id);
+      // remove player instance from allPlayerInstances
+      this.allPlayerInstances = this.allPlayerInstances.filter(
+        (el) => el.id != id
+      );
+      // remove child from stage
+      player.getGraphics().parent.removeChild(player.getGraphics());
+    },
+    update_players(players) {
+      players.forEach((player) => {
+        // skip own player
+        if (this.player.id == player.id) return;
+
+        // check if player should be moved or instanciated
+        let p = this.playerExists(player.id);
+        if (p) {
+          p.setPosition(player.position.x, player.position.y);
+        } else {
+          this.initPlayer(player);
+        }
+      });
+    },
   },
   methods: {
-    initPlayers() {
-      this.allPlayers.forEach((el) => {
-        // create new player instance
-        let p = new Player(this.scene, el.id, el.name, el.color, el.radius);
-
-        // add player to objects array
-        this.allPlayerInstances.push(p);
-
-        // add player object to stage
-        this.app.stage.addChild(p.getGraphics());
-        // obj.on("click", (e) => {
-        //   console.log("clicked", e.target);
-        // });
-      });
+    gameLoop(delta) {
+      this.updatePlayerPosition(delta);
+    },
+    initOwnPlayer() {
+      this.player.name = this.getNewRandomUserName();
+      let data = {
+        id: this.player.id,
+        name: this.player.name,
+        color: this.player.color,
+        radius: this.player.radius,
+        position: Player.generateRandomStartingPosition(
+          this.scene,
+          this.player.radius
+        ),
+      };
+      this.initPlayer(data);
+      this.$socket.client.emit("player_join", data);
+    },
+    playerExists(id) {
+      return this.allPlayerInstances.find((p) => p.getID() == id);
+    },
+    // initPlayer(id, name, color, radius, position) {
+    initPlayer(playerObj) {
+      // create new player instance and add it to the array and stage
+      const player = new Player(
+        this.scene,
+        playerObj.id,
+        playerObj.name,
+        playerObj.color,
+        playerObj.radius,
+        playerObj.position
+      );
+      this.app.stage.addChild(player.getGraphics());
+      this.allPlayerInstances.push(player);
     },
     updatePlayerPosition(delta) {
       // find player object
-      let ownPlayer = this.allPlayerInstances.find(
-        (p) => p.getID() == this.player.id
-      );
+      let ownPlayer = this.playerExists(this.player.id);
 
       // move if alive
       if (ownPlayer && ownPlayer.isAlive()) {
@@ -102,12 +129,25 @@ export default {
         else if (this.keys["d"]) this.player.velocity.x = this.player.speed;
         else this.player.velocity.x = 0;
 
-        // update player position
-        ownPlayer.moveByVelocity(this.player.velocity, delta);
+        // update player position if player moved
+        if (this.player.velocity.x != 0 || this.player.velocity.y != 0) {
+          // update player position
+          ownPlayer.moveByVelocity(this.player.velocity, delta);
+
+          // emit update to server
+          this.$socket.client.emit("player_update", {
+            id: this.player.id,
+            name: this.player.name,
+            color: this.player.color,
+            radius: this.player.radius,
+            speed: this.player.speed,
+            position: {
+              x: ownPlayer.getPosX(),
+              y: ownPlayer.getPosY(),
+            },
+          });
+        }
       }
-    },
-    gameLoop(delta) {
-      this.updatePlayerPosition(delta);
     },
     initApplication() {
       // generate application
@@ -126,6 +166,14 @@ export default {
 
       // init game loop
       this.app.ticker.add((delta) => this.gameLoop(delta));
+    },
+    addKeyboardListeners() {
+      document.body.addEventListener("keydown", (e) => {
+        this.keys[e.key] = true;
+      });
+      document.body.addEventListener("keyup", (e) => {
+        this.keys[e.key] = false;
+      });
     },
     initBorders() {
       let line = new PIXI.Graphics();
