@@ -12,7 +12,7 @@
     </v-app-bar>
 
     <GithubCorner
-      url="https://me.node5.de"
+      url="https://github.com/thieleju"
       flipOnHover
       cornerColor="#12161B"
       :size="62"
